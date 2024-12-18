@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "950526525980",
+    "project_id": "redcrossmp-42cfa",
+    "storage_bucket": "redcrossmp-42cfa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:950526525980:android:d46eafcf10eee5f45115d9",
+        "android_client_info": {
+          "package_name": "com.example.redcross_mp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZlQwXbyTabokS3D-ETuqmJM1Xaf2-yAw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
