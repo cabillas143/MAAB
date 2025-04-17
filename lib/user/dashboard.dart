@@ -21,8 +21,6 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-
-    // Initialize pages with email
     _pages = [
       HomeContentPage(email: widget.email),
       const MembershipCardsPage(membershipTiers: []),
@@ -150,7 +148,7 @@ class HomeContentPage extends StatelessWidget {
         final String imagePath = 'assets/$membershipCategory.png';
 
         if (status == 'approved' && membershipCategory.isNotEmpty) {
-          return _buildMembershipImageCard(imagePath);
+          return _buildMembershipImageCard(imagePath, membershipCategory);
         }
 
         return _buildPendingApplicationCard();
@@ -216,8 +214,9 @@ class HomeContentPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMembershipImageCard(String imagePath,
-      {double width = double.infinity}) {
+  Widget _buildMembershipImageCard(String imagePath, String category) {
+    final isClassicCard = category.toLowerCase() == 'classic';
+
     return Card(
       elevation: 6,
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -228,9 +227,9 @@ class HomeContentPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         child: Image.asset(
           imagePath,
-          fit: BoxFit.cover,
-          height: 300, // Maintain fixed height
-          width: 530, // Use the passed or default width
+          fit: isClassicCard ? BoxFit.contain : BoxFit.cover,
+          height: isClassicCard ? 300 : 200, // Adjust for classic card
+          width: isClassicCard ? 200 : double.infinity, // Portrait for classic
           errorBuilder: (context, error, stackTrace) {
             return Container(
               alignment: Alignment.center,
