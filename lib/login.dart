@@ -123,7 +123,7 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 30),
                       // Email Field with Box Shadow
                       Container(
-                        width: constraints.maxWidth * 0.2,
+                        width: constraints.maxWidth * 0.6, // Adjust width for better layout
                         decoration: BoxDecoration(
                           boxShadow: [
                             BoxShadow(
@@ -144,13 +144,20 @@ class _LoginPageState extends State<LoginPage> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: Colors.red, // Adjust highlight color
+                                width: 2,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
                       // Password Field with Box Shadow
                       Container(
-                        width: constraints.maxWidth * 0.2,
+                        width: constraints.maxWidth * 0.6, // Adjust width for better layout
                         decoration: BoxDecoration(
                           boxShadow: [
                             BoxShadow(
@@ -183,6 +190,13 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: Colors.red, // Adjust highlight color
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),
