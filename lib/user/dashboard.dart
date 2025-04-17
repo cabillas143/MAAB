@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:redcross_mp/user/profile.dart';
-import 'package:redcross_mp/user/membership_card.dart';
-import 'package:redcross_mp/user/registration_page.dart';
-import 'package:redcross_mp/user/notification_page.dart'; // Import the external notification page
 
 class DashboardPage extends StatefulWidget {
   final String email;
@@ -23,9 +19,6 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     _pages = [
       HomeContentPage(email: widget.email),
-      const MembershipCardsPage(membershipTiers: []),
-      const ProfilePage(),
-      const NotificationPage(),
     ];
   }
 
@@ -47,18 +40,6 @@ class _DashboardPageState extends State<DashboardPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.card_membership),
-            label: 'Card',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle),
-            label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -83,7 +64,7 @@ class HomeContentPage extends StatelessWidget {
         const SizedBox(height: 20),
         _buildHeader(),
         const SizedBox(height: 20),
-        _buildMembershipCard(context),
+        _buildMembershipStatusCard(),
       ],
     );
   }
@@ -118,7 +99,7 @@ class HomeContentPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMembershipCard(BuildContext context) {
+  Widget _buildMembershipStatusCard() {
     return FutureBuilder<QuerySnapshot>(
       future: FirebaseFirestore.instance
           .collection('membershipApplicants')
@@ -137,115 +118,45 @@ class HomeContentPage extends StatelessWidget {
           );
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildJoinNowCard(context);
+          return _buildNoMembershipCard();
         }
 
         final doc = snapshot.data!.docs.first;
         final data = doc.data() as Map<String, dynamic>;
-
         final String status = data['status']?.toLowerCase() ?? 'pending';
-        final String membershipCategory = data['membershipCategory'] ?? '';
-        final String imagePath = 'assets/$membershipCategory.png';
 
-        if (status == 'approved' && membershipCategory.isNotEmpty) {
-          return _buildMembershipImageCard(imagePath, membershipCategory);
-        }
-
-        return _buildPendingApplicationCard();
+        return Card(
+          elevation: 6,
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const Text(
+                  "Membership Status",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Your application status: ${status[0].toUpperCase()}${status.substring(1)}",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
 
-  Widget _buildJoinNowCard(BuildContext context) {
-    return Card(
-      elevation: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Colors.redAccent, Color(0xFF002855)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Not a Member Yet?",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Join the Philippine Red Cross Membership Program to help vulnerable Filipinos and enjoy accident assistance benefits.",
-              style: TextStyle(fontSize: 16, color: Colors.white70),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.redAccent,
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RegistrationPage(
-                      email: '',
-                    ),
-                  ),
-                );
-              },
-              child: const Text("Join Now"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMembershipImageCard(String imagePath, String category) {
-    final isClassicCard = category.toLowerCase() == 'classic';
-
-    return Card(
-      elevation: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Image.asset(
-          imagePath,
-          fit: isClassicCard ? BoxFit.contain : BoxFit.cover,
-          height: isClassicCard ? 300 : 200, // Adjust for classic card
-          width: isClassicCard ? 200 : double.infinity, // Portrait for classic
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              alignment: Alignment.center,
-              height: 200,
-              child: const Text(
-                'Image not found',
-                style: TextStyle(color: Colors.red),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPendingApplicationCard() {
+  Widget _buildNoMembershipCard() {
     return Card(
       elevation: 6,
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -257,7 +168,7 @@ class HomeContentPage extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              "Membership Pending",
+              "No Membership Found",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -265,7 +176,7 @@ class HomeContentPage extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(
-              "Your application is under review. Please check back later.",
+              "Please register to become a member of the Philippine Red Cross.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
