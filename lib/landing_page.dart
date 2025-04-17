@@ -72,19 +72,19 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
               clipper: WelcomeHeaderClipper(),
               child: Container(
                 height: 180,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFFE63946).withOpacity(0.7),
-                      const Color(0xFF6A040F).withOpacity(0.7),
+                      Color.fromRGBO(230, 57, 70, 0.7),  // Fixed color opacity
+                      Color.fromRGBO(106, 4, 15, 0.7),   // Fixed color opacity
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-                child: Column(
-                  children: const [
+                child: const Column(
+                  children: [
                     Text(
                       'Welcome',
                       style: TextStyle(
@@ -241,6 +241,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     );
   }
 }
+
 
 // Custom Clipper for curved header
 class WelcomeHeaderClipper extends CustomClipper<Path> {

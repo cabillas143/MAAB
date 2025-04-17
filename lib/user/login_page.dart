@@ -28,18 +28,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       duration: const Duration(milliseconds: 800),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
 
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeIn));
 
-    _logoBounce = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
-    );
+    _logoBounce = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _animationController, curve: Curves.elasticOut));
 
     _animationController.forward();
   }
@@ -301,9 +294,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
       _showMessage("Welcome back, $username!");
 
+      // Pass the email to the MainDashboard constructor
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const MainDashboard(email: null)),
+        MaterialPageRoute(builder: (_) => MainDashboard(email: email)), // Pass email here
       );
     } on FirebaseAuthException catch (e) {
       _showMessage("Login failed: ${e.message}");

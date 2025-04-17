@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:redcross_mp/landing_page.dart'; // Make sure this path is correct
 
 class MainDashboard extends StatelessWidget {
-  const MainDashboard({super.key, required email});
+  final String email;
+
+  const MainDashboard({super.key, required this.email});
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +60,30 @@ class MainDashboard extends StatelessWidget {
               leading: const Icon(Icons.logout),
               title: const Text("Sign Out"),
               onTap: () {
-                Navigator.pop(context);
-                // Add sign out logic
+                showDialog(
+                  context: context,
+                  builder: (BuildContext dialogContext) {
+                    return AlertDialog(
+                      title: const Text('Confirm Sign Out'),
+                      content: const Text('Are you sure you want to sign out?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(dialogContext).pop();
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.of(dialogContext).pop();
+                            await _signOutAndNavigate(context);
+                          },
+                          child: const Text('Sign Out'),
+                        ),
+                      ],
+                    );
+                  },
+                );
               },
             ),
           ],
@@ -73,8 +100,7 @@ class MainDashboard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Builder(
-                    builder: (context) => // Menu icon opens drawer
-                        IconButton(
+                    builder: (context) => IconButton(
                       icon: const Icon(Icons.menu, color: Colors.white),
                       onPressed: () {
                         Scaffold.of(context).openDrawer();
@@ -86,21 +112,24 @@ class MainDashboard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(username,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16)),
-                          const Text("HERO FOR BABIES",
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 12)),
+                          Text(
+                            username,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                          ),
+                          const Text(
+                            "HERO FOR BABIES",
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
                         ],
                       ),
                       const SizedBox(width: 12),
                       const CircleAvatar(
                         radius: 24,
-                        backgroundImage:
-                            AssetImage('assets/profile.png'), // Replace with real image
+                        backgroundImage: AssetImage('assets/profile.png'),
                       ),
                     ],
                   ),
@@ -135,9 +164,9 @@ class MainDashboard extends StatelessWidget {
                           style: TextStyle(color: Colors.grey),
                         ),
                         const SizedBox(height: 12),
-                        Row(
+                        const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(Icons.bloodtype, color: Colors.red),
                             SizedBox(width: 12),
                             Icon(Icons.wb_sunny, color: Colors.orange),
@@ -166,9 +195,9 @@ class MainDashboard extends StatelessWidget {
                       color: Colors.blue[800],
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
+                    child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text("HERO FOR BABIES",
                             style:
                                 TextStyle(color: Colors.white70, fontSize: 12)),
@@ -189,8 +218,8 @@ class MainDashboard extends StatelessWidget {
                     leading:
                         const Icon(Icons.calendar_today, color: Colors.red),
                     title: const Text("Schedule New Appointment"),
-                    subtitle: const Text(
-                        "Choose a time, location and donation type"),
+                    subtitle:
+                        const Text("Choose a time, location and donation type"),
                     onTap: () {},
                   ),
 
@@ -211,4 +240,29 @@ class MainDashboard extends StatelessWidget {
       ),
     );
   }
+
+  static Future<void> _signOutAndNavigate(BuildContext context) async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({'lastLogout': FieldValue.serverTimestamp()});
+    }
+
+    await FirebaseAuth.instance.signOut();
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LandingPage()),
+      (route) => false,
+    );
+  } catch (e) {
+    debugPrint("Sign out error: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Error signing out. Please try again.")),
+    );
+  }
+}
 }
