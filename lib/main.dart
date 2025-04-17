@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:redcross_mp/landing_page.dart';
-import 'package:redcross_mp/user/dashboard.dart';
 import 'package:redcross_mp/user/login_page.dart';
+import 'package:redcross_mp/user/maindashboard.dart';
 import 'package:redcross_mp/user/signup_page.dart';
 
 void main() async {
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
           case '/dashboard':
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
-              builder: (context) => DashboardPage(
+              builder: (context) => MainDashboard(
                 email: args?['email'] ?? '',
               ),
             );

@@ -1,248 +1,320 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:redcross_mp/user/dashboard.dart';
+import 'maindashboard.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  // Controllers for email and password input fields
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscureText = true;
 
-  // State variables
-  bool _isPasswordVisible = false;
-  String? _errorMessage;
+  late final AnimationController _animationController;
+  late final Animation<Offset> _slideAnimation;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<double> _logoBounce;
 
-  /// Handles user login
-  Future<void> _login() async {
-    // Validate input fields
-    if (_emailController.text.trim().isEmpty ||
-        _passwordController.text.trim().isEmpty) {
-      setState(() {
-        _errorMessage = "Email and Password cannot be empty.";
-      });
-      return;
-    }
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
 
-    try {
-      // Sign in with Firebase Authentication
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
 
-      User? user = userCredential.user;
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
 
-      // Check if email is verified
-      if (user != null && !user.emailVerified) {
-        await FirebaseAuth.instance.signOut();
-        setState(() {
-          _errorMessage = "Please verify your email before logging in.";
-        });
-        return;
-      }
+    _logoBounce = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
 
-      // Update last login timestamp in Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user?.uid)
-          .update({'lastLogin': FieldValue.serverTimestamp()});
+    _animationController.forward();
+  }
 
-      // Navigate to Dashboard and pass the user's email
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DashboardPage(email: user?.email ?? ''),
-        ),
-      );
-    } on FirebaseAuthException catch (e) {
-      // Handle Firebase Authentication exceptions
-      setState(() {
-        _errorMessage = e.message;
-      });
-    } catch (e) {
-      // Handle unexpected errors
-      setState(() {
-        _errorMessage = "An unexpected error occurred. Please try again.";
-      });
-    }
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: _buildLoginForm(),
-      ),
-    );
-  }
-
-  /// Builds the login form widget
-  Widget _buildLoginForm() {
-    return Column(
-      children: [
-        _buildHeader(),
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildEmailField(),
-              const SizedBox(height: 15),
-              _buildPasswordField(),
-              if (_errorMessage != null) _buildErrorMessage(),
-              const SizedBox(height: 20),
-              _buildLoginButton(),
-              const SizedBox(height: 10),
-              _buildSignupRedirect(),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds the header with a logo and welcome text
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        Container(
-          height: 200,
-          decoration: const BoxDecoration(
-            color: Colors.red,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(50),
-              bottomRight: Radius.circular(50),
-            ),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/logo1.png', height: 80),
-                const Text(
-                  "Welcome Back",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  "Log in to your account",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds the email input field
-  Widget _buildEmailField() {
-    return TextField(
-      controller: _emailController,
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.email),
-        labelText: "Email",
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-
-  /// Builds the password input field
-  Widget _buildPasswordField() {
-    return TextField(
-      controller: _passwordController,
-      obscureText: !_isPasswordVisible,
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.lock),
-        labelText: "Password",
-        suffixIcon: IconButton(
-          icon: Icon(
-            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-          ),
-          onPressed: () {
-            setState(() {
-              _isPasswordVisible = !_isPasswordVisible;
-            });
-          },
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-
-  /// Displays error messages if any
-  Widget _buildErrorMessage() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Text(
-        _errorMessage!,
-        style: const TextStyle(color: Colors.red),
-      ),
-    );
-  }
-
-  /// Builds the login button
-  Widget _buildLoginButton() {
-    return ElevatedButton(
-      onPressed: _login,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red,
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      child: const Text(
-        "Login",
-        style: TextStyle(color: Colors.white, fontSize: 18),
-      ),
-    );
-  }
-
-  /// Builds the "Signup" redirection link
-  Widget _buildSignupRedirect() {
-    return Center(
-      child: RichText(
-        text: TextSpan(
-          text: "Don't have an account? ",
-          style: const TextStyle(color: Colors.black),
+      backgroundColor: const Color(0xFF1C0B2B),
+      body: SafeArea(
+        child: Column(
           children: [
-            TextSpan(
-              text: "Signup",
-              style: const TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
+            const SizedBox(height: 60),
+            Center(
+              child: ScaleTransition(
+                scale: _logoBounce,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white, width: 1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Image.asset('assets/logo1.png', height: 100),
+                ),
               ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  Navigator.pushNamed(context, '/signup');
-                },
+            ),
+            const SizedBox(height: 40),
+            Expanded(
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFB80024), Color(0xFF4C0019)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildInputField(
+                          controller: _emailController,
+                          hintText: 'Email',
+                          icon: Icons.email,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildInputField(
+                          controller: _passwordController,
+                          hintText: 'Password',
+                          icon: Icons.vpn_key,
+                          isPassword: true,
+                          obscureText: _obscureText,
+                          toggleObscureText: () => setState(() => _obscureText = !_obscureText),
+                        ),
+                        const SizedBox(height: 30),
+                        _buildSignInButton(),
+                        const SizedBox(height: 50),
+                        _buildBottomActions(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    bool isPassword = false,
+    bool obscureText = false,
+    VoidCallback? toggleObscureText,
+  }) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 350),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C0B2B),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                obscureText: obscureText,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  hintText: hintText,
+                  hintStyle: const TextStyle(color: Colors.white54),
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+            if (isPassword && toggleObscureText != null)
+              IconButton(
+                icon: Icon(
+                  obscureText ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: toggleObscureText,
+              ),
+            Container(
+              height: 48,
+              width: 48,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF5C5C), Color(0xFFB80024)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(18),
+                  bottomRight: Radius.circular(18),
+                ),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSignInButton() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF5C5C), Color(0xFFB80024)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: ElevatedButton(
+        onPressed: _handleLogin,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        ),
+        child: const Text(
+          'Sign in',
+          style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.pushReplacementNamed(context, '/landing'),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Back',
+                style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            const Text(
+              "Don't have an account?",
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            InkWell(
+              onTap: () => Navigator.pushReplacementNamed(context, '/signup'),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  "Sign up",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage("Please enter email and password.");
+      return;
+    }
+
+    try {
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final uid = credential.user?.uid;
+      if (uid == null) {
+        _showMessage("User ID not found.");
+        return;
+      }
+
+      final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      final doc = await userRef.get();
+
+      if (doc.exists) {
+        await userRef.update({'lastlogin': FieldValue.serverTimestamp()});
+      } else {
+        await userRef.set({
+          'email': email,
+          'lastlogin': FieldValue.serverTimestamp(),
+        });
+      }
+
+      final updatedDoc = await userRef.get();
+      final username = updatedDoc.data()?['username'] ?? email;
+
+      _showMessage("Welcome back, $username!");
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainDashboard(email: null)),
+      );
+    } on FirebaseAuthException catch (e) {
+      _showMessage("Login failed: ${e.message}");
+    } catch (e) {
+      _showMessage("An unexpected error occurred: $e");
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }
